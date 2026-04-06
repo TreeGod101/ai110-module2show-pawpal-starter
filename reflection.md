@@ -1,17 +1,22 @@
 # PawPal+ Project Reflection
 
 ## 1. System Design
-
+The app should have an input/remove function for tasks, it should also have a calendar function that abides by personal constraints, and output a plan that bases it off the constraints and preferences of the person using it. 
 **a. Initial design**
 
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
+
+My UML design includes four classes: Owner, Pet, Task, and Scheduler.
+
+The Owner stores basic info (like ID) and manages a list of pets. The Pet represents each animal and holds its own tasks. The Task represents activities (e.g., feeding or walking) and includes details like time, recurrence, and completion status, along with logic for rescheduling and conflict detection. The Scheduler manages all tasks across pets, handling sorting, conflict detection, and daily scheduling.
 
 **b. Design changes**
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
 
+I made a few changes to improve the structure and make the app work more correctly. I added better connections between classes by giving each Task a reference to its Pet and each Pet a reference to its Owner, and these get set automatically when they’re added. This makes it easier to move between objects and keeps the data consistent. I also gave each Owner their own Scheduler and made sure that when tasks are added or removed from pets, they stay synced with the scheduler so everything is tracked in one place. I fixed the detect_conflicts method so it checks all tasks instead of just ones next to each other, which catches more conflicts even though it’s a bit slower. On top of that, I added a check to make sure task durations aren’t zero or negative, updated imports, and cleaned up type hints. Overall, these changes make the code cleaner, more reliable, and easier to manage.
 ---
 
 ## 2. Scheduling Logic and Tradeoffs
