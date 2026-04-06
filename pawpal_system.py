@@ -1,14 +1,17 @@
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 class Task:
     def __init__(self, title: str, date_time: datetime, duration: int, recurring: bool = False, frequency: str = ""):
+        if duration <= 0:
+            raise ValueError("Duration must be positive")
         self.title = title
         self.date_time = date_time
         self.duration = duration
         self.recurring = recurring
         self.frequency = frequency
         self.completed = False
+        self.pet: Optional['Pet'] = None
 
     def mark_completed(self):
         self.completed = True
@@ -40,13 +43,19 @@ class Pet:
         self.name = name
         self.species = species
         self.tasks: List[Task] = []
+        self.owner: Optional['Owner'] = None
 
     def add_task(self, task: Task):
         self.tasks.append(task)
+        task.pet = self
+        if self.owner:
+            self.owner.scheduler.add_task(task)
 
     def remove_task(self, task: Task):
         if task in self.tasks:
             self.tasks.remove(task)
+            if self.owner:
+                self.owner.scheduler.remove_task(task)
 
     def get_upcoming_task(self) -> Optional[Task]:
         now = datetime.now()
@@ -60,13 +69,19 @@ class Owner:
         self.name = name
         self.ID = owner_id
         self.pets: List[Pet] = []
+        self.scheduler = Scheduler()
 
     def add_pet(self, pet: Pet):
         self.pets.append(pet)
+        pet.owner = self
 
     def remove_pet(self, pet: Pet):
         if pet in self.pets:
             self.pets.remove(pet)
+            pet.owner = None
+            # Optionally remove pet's tasks from scheduler
+            for task in pet.tasks:
+                self.scheduler.remove_task(task)
 
     def get_all_tasks(self) -> List[Task]:
         all_tasks = []
@@ -95,12 +110,12 @@ class Scheduler:
     def sort_tasks(self) -> List[Task]:
         return sorted(self.tasks, key=lambda t: t.date_time)
 
-    def detect_conflicts(self) -> List[tuple]:
+    def detect_conflicts(self) -> List[Tuple['Task', 'Task']]:
         conflicts = []
-        sorted_tasks = self.sort_tasks()
-        for i in range(len(sorted_tasks) - 1):
-            if sorted_tasks[i].is_conflicting(sorted_tasks[i + 1]):
-                conflicts.append((sorted_tasks[i], sorted_tasks[i + 1]))
+        for i in range(len(self.tasks)):
+            for j in range(i + 1, len(self.tasks)):
+                if self.tasks[i].is_conflicting(self.tasks[j]):
+                    conflicts.append((self.tasks[i], self.tasks[j]))
         return conflicts
 
     def generate_daily_schedule(self, date: datetime.date):
